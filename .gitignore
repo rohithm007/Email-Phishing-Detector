@@ -1,0 +1,44 @@
+# Ignore Python cache files
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+
+# Virtual environments
+venv/
+env/
+ENV/
+.venv
+
+# Model files (optional - uncomment if you don't want to commit trained models)
+# models/*.pkl
+
+# IDE specific files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS specific files
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+phishing_log.txt
+
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Distribution / packaging
+build/
+dist/
+*.egg-info/
+
+# Environment variables
+.env
+.env.local
