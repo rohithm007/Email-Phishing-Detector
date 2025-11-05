@@ -8,6 +8,7 @@ A real-time email phishing detection system built with Python and Machine Learni
 - **Machine Learning**: Random Forest classifier with 20+ features
 - **Feature Extraction**: Advanced analysis of URLs, keywords, sender information, and content patterns
 - **Risk Levels**: Categorizes threats as SAFE, LOW, MEDIUM, HIGH, or CRITICAL
+- **Email Notifications**: Automatic alerts sent to admin when phishing is detected
 - **Batch Processing**: Analyze multiple emails at once
 - **Easy to Use**: Simple API interface and command-line testing
 
@@ -53,7 +54,27 @@ The system extracts and analyzes over 20 features including:
    - Save the trained model to `models/phishing_detector.pkl`
    - Display training accuracy and feature importance
 
-4. **Start the API server**
+4. **Configure Email Notifications (Optional)**
+   ```powershell
+   # Copy the example environment file
+   Copy-Item .env.example .env
+   
+   # Edit .env file with your email credentials
+   # For Gmail users: Enable 2-Step Verification and create an App Password
+   # Google Account > Security > 2-Step Verification > App passwords
+   ```
+   
+   Edit the `.env` file:
+   ```env
+   EMAIL_NOTIFICATIONS_ENABLED=true
+   SMTP_SERVER=smtp.gmail.com
+   SMTP_PORT=587
+   SENDER_EMAIL=your-email@gmail.com
+   SENDER_PASSWORD=your-app-password
+   ADMIN_EMAIL=admin@example.com
+   ```
+
+5. **Start the API server**
    ```powershell
    python app.py
    ```
@@ -234,13 +255,33 @@ Get model information and top features
 }
 ```
 
+### `GET /notifications/test`
+Test email notification configuration
+```json
+{
+  "status": "success",
+  "message": "Successfully connected to smtp.gmail.com",
+  "admin_email": "admin@example.com"
+}
+```
+
+### `POST /notifications/send-test`
+Send a test phishing alert to verify notifications work
+```json
+{
+  "status": "success",
+  "message": "Test alert sent to admin@example.com"
+}
+```
+
 ## 📁 Project Structure
 
 ```
 email phissing detector/
 ├── src/
 │   ├── feature_extractor.py    # Email feature extraction
-│   └── phishing_detector.py    # ML model for detection
+│   ├── phishing_detector.py    # ML model for detection
+│   └── email_notifier.py       # Email notification system
 ├── data/
 │   └── sample_emails.py        # Sample training data
 ├── models/
@@ -249,6 +290,7 @@ email phissing detector/
 ├── train_model.py              # Model training script
 ├── test_detector.py            # Testing script
 ├── requirements.txt            # Python dependencies
+├── .env.example                # Example environment config
 └── README.md                   # This file
 ```
 
@@ -260,7 +302,55 @@ email phissing detector/
 - **LOW** (≥20% confidence): Low risk but stay vigilant
 - **SAFE** (<20% confidence): Appears legitimate
 
-## 🔧 Customization
+## � Email Notifications
+
+The system can automatically send email alerts to administrators when phishing emails are detected.
+
+### Setup Email Notifications
+
+1. **For Gmail Users:**
+   - Enable 2-Step Verification on your Google Account
+   - Go to: Google Account > Security > 2-Step Verification > App passwords
+   - Create an App Password for "Mail"
+   - Use this App Password in your `.env` file
+
+2. **Configure `.env` file:**
+   ```env
+   EMAIL_NOTIFICATIONS_ENABLED=true
+   SMTP_SERVER=smtp.gmail.com
+   SMTP_PORT=587
+   SENDER_EMAIL=your-email@gmail.com
+   SENDER_PASSWORD=your-16-char-app-password
+   ADMIN_EMAIL=admin@example.com
+   ```
+
+3. **Test the configuration:**
+   ```powershell
+   # Test connection
+   Invoke-RestMethod -Uri "http://localhost:5000/notifications/test"
+   
+   # Send test alert
+   Invoke-RestMethod -Uri "http://localhost:5000/notifications/send-test" -Method Post
+   ```
+
+### When Notifications Are Sent
+
+- Notifications are sent automatically when phishing is detected with **≥60% confidence**
+- Email includes:
+  - Risk level and confidence score
+  - Email sender and subject
+  - Body preview
+  - Timestamp
+  - Action recommendations
+
+### Notification Features
+
+- **HTML & Plain Text**: Beautiful HTML emails with plain text fallback
+- **Color-coded Risk Levels**: Visual indicators for threat severity
+- **Detailed Analysis**: Complete email information in the alert
+- **Actionable Recommendations**: Clear guidance on next steps
+
+## �🔧 Customization
 
 ### Adding More Training Data
 

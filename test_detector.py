@@ -12,9 +12,8 @@ import json
 USE_API = False  # Set to True to test API, False to test model directly
 
 if not USE_API:
-    sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'src'))
-    from feature_extractor import EmailFeatureExtractor
-    from phishing_detector import PhishingDetector
+    from src.feature_extractor import EmailFeatureExtractor
+    from src.phishing_detector import PhishingDetector
 
 
 # Test cases

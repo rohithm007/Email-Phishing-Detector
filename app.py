@@ -8,17 +8,16 @@ import sys
 import os
 import pandas as pd
 
-# Add src directory to path
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'src'))
-
-from feature_extractor import EmailFeatureExtractor
-from phishing_detector import PhishingDetector
+from src.feature_extractor import EmailFeatureExtractor
+from src.phishing_detector import PhishingDetector
+from src.email_notifier import EmailNotifier
 
 app = Flask(__name__)
 
 # Initialize components
 feature_extractor = EmailFeatureExtractor()
 detector = PhishingDetector()
+notifier = EmailNotifier()
 
 # Try to load pre-trained model
 try:
@@ -26,6 +25,12 @@ try:
     print("✓ Pre-trained model loaded successfully")
 except FileNotFoundError:
     print("⚠ No pre-trained model found. Please train the model first using train_model.py")
+
+# Check email notification status
+if notifier.enabled:
+    print(f"✓ Email notifications enabled - Admin: {notifier.admin_email}")
+else:
+    print("ℹ️ Email notifications disabled (configure .env to enable)")
 
 
 @app.route('/')
@@ -35,10 +40,14 @@ def home():
         'service': 'Email Phishing Detection API',
         'version': '1.0',
         'status': 'running',
+        'notifications_enabled': notifier.enabled,
         'endpoints': {
             '/detect': 'POST - Detect phishing in email',
+            '/batch-detect': 'POST - Detect phishing in multiple emails',
             '/health': 'GET - Check API health',
-            '/model/info': 'GET - Get model information'
+            '/model/info': 'GET - Get model information',
+            '/notifications/test': 'GET - Test notification configuration',
+            '/notifications/send-test': 'POST - Send test phishing alert'
         }
     })
 
@@ -94,6 +103,11 @@ def detect_phishing():
         # Make prediction
         prediction = detector.predict(features)
         
+        # Send notification if phishing detected
+        notification_sent = False
+        if prediction['is_phishing']:
+            notification_sent = notifier.send_phishing_alert(email_data, prediction)
+        
         # Prepare response
         response = {
             'email': {
@@ -106,6 +120,7 @@ def detect_phishing():
             'risk_level': prediction['risk_level'],
             'recommendation': get_recommendation(prediction),
             'features_analyzed': len(features),
+            'notification_sent': notification_sent,
             'timestamp': pd.Timestamp.now().isoformat()
         }
         
@@ -204,6 +219,55 @@ def model_info():
         return jsonify({
             'error': str(e)
         }), 500
+
+
+@app.route('/notifications/test', methods=['GET'])
+def test_notifications():
+    """Test email notification configuration"""
+    result = notifier.test_connection()
+    
+    if result['success']:
+        return jsonify({
+            'status': 'success',
+            'message': result['message'],
+            'admin_email': notifier.admin_email,
+            'smtp_server': notifier.smtp_server
+        }), 200
+    else:
+        return jsonify({
+            'status': 'error',
+            'message': result['message']
+        }), 400
+
+
+@app.route('/notifications/send-test', methods=['POST'])
+def send_test_notification():
+    """Send a test phishing alert"""
+    test_email = {
+        'subject': 'TEST: Phishing Detection Alert',
+        'body': 'This is a test email to verify the notification system is working correctly.',
+        'sender': 'test@example.com'
+    }
+    
+    test_prediction = {
+        'is_phishing': True,
+        'confidence': 0.95,
+        'risk_level': 'CRITICAL',
+        'prediction': 'PHISHING'
+    }
+    
+    success = notifier.send_phishing_alert(test_email, test_prediction)
+    
+    if success:
+        return jsonify({
+            'status': 'success',
+            'message': f'Test alert sent to {notifier.admin_email}'
+        }), 200
+    else:
+        return jsonify({
+            'status': 'error',
+            'message': 'Failed to send test alert. Check configuration.'
+        }), 400
 
 
 def get_recommendation(prediction):

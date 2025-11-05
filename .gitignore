@@ -42,3 +42,6 @@ dist/
 # Environment variables
 .env
 .env.local
+
+# Email notification logs
+phishing_alerts.log

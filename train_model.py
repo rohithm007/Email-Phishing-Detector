@@ -7,18 +7,9 @@ import os
 import pandas as pd
 import numpy as np
 
-# Add directories to path
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'src'))
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'data'))
-
-from feature_extractor import EmailFeatureExtractor
-from phishing_detector import PhishingDetector
-
-# Import sample emails data
-try:
-    from sample_emails import get_training_data
-except ImportError:
-    from data.sample_emails import get_training_data
+from src.feature_extractor import EmailFeatureExtractor
+from src.phishing_detector import PhishingDetector
+from data.sample_emails import get_training_data
 
 
 def train_model():
